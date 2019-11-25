@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 
 namespace PollyRetry.Services
 {
-	public interface IMicroBApi
+	public interface IMicroBService
 	{
+		Task<int> Get(int id);
 	}
 }
