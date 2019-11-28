@@ -12,4 +12,8 @@
     <PackageReference Include="Refit.HttpClientFactory" Version="5.0.23" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Api\Api.csproj" />
+  </ItemGroup>
+
 </Project>

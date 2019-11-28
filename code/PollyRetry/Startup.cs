@@ -1,12 +1,12 @@
 using System;
 using System.Net.Http;
+using Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Polly;
-using PollyRetry.Services;
 using Refit;
 
 namespace PollyRetry
@@ -28,15 +28,29 @@ namespace PollyRetry
 
 			services.AddControllers();
 
-			//services.AddHttpClient("RemoteServer", client =>
+			//services.AddHttpClient("IAzureDevOpsApi", client =>
 			//{
-			//	client.BaseAddress = new Uri("http://localhost:57696/api/");
+			//	client.BaseAddress = new Uri("http://localhost:49818/api");
 			//	client.DefaultRequestHeaders.Add("Accept", "application/json");
 			//}).AddPolicyHandler(httpRetryPolicy);
 
-			services.AddRefitClient<IMicroBApi>()
-				.ConfigureHttpClient(c => c.BaseAddress = new Uri(""))
-				.AddPolicyHandler(httpRetryPolicy); ;
+			//services.AddRefitClient<IAzureDevOpsApi>()
+			//	.ConfigureHttpClient(client =>
+			//	{
+			//		client.BaseAddress = new Uri("http://localhost:49818/api");
+			//		client.DefaultRequestHeaders.Add("Accept", "application/json");
+			//	})
+			//	.AddPolicyHandler(httpRetryPolicy);
+
+			services.AddHttpClient(nameof(IAzureDevOpsApi), client =>
+				{
+					client.BaseAddress = new Uri("http://localhost:49818/api");
+					client.DefaultRequestHeaders.Add("Accept", "application/json");
+				})
+				.AddTypedClient(RestService.For<IAzureDevOpsApi>);
+			//.AddTransientHttpErrorPolicy(p => p.RetryAsync(3))
+			//.AddTransientHttpErrorPolicy(p => p.CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)))
+			//.AddPolicyHandler(httpRetryPolicy);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
