@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using Api;
 using Microsoft.AspNetCore.Builder;
@@ -23,14 +24,32 @@ namespace PollyRetry
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode).RetryAsync(2);
+			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+				.RetryAsync(2, onRetry: (response, retryCount) =>
+				{
+					if (response.Result.StatusCode == HttpStatusCode.Forbidden)
+					{
+						//Perform re-auth
+					}
+					else
+					{
+						//Log something
+					}
+				});
 			
 			AsyncPolicy<HttpResponseMessage> waitAndRetryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.WaitAndRetryAsync(2, 
 					retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
-					onRetry: (result, timeSpan) =>
+					onRetry: (response, timeSpan, context) =>
 					{
-						
+						if (response.Result.StatusCode == HttpStatusCode.Forbidden)
+						{
+							//Perform re-auth
+						}
+						else
+						{
+							//Log something
+						}
 					});
 
 			services.AddControllers();
@@ -41,8 +60,8 @@ namespace PollyRetry
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
 				})
 				.AddTypedClient(RestService.For<IAzureDevOpsApi>)
-				.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
-				//.AddPolicyHandler(retryPolicy);
+				//.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
+				.AddPolicyHandler(retryPolicy);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

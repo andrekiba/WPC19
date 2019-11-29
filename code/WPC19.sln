@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Api", "Api\Api.csproj", "{2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WithoutPolly", "WithoutPolly\WithoutPolly.csproj", "{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyReauth", "PollyReauth\PollyReauth.csproj", "{744FC4B8-B7CD-4BE9-B0BB-212EC4F8A583}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{744FC4B8-B7CD-4BE9-B0BB-212EC4F8A583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{744FC4B8-B7CD-4BE9-B0BB-212EC4F8A583}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{744FC4B8-B7CD-4BE9-B0BB-212EC4F8A583}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{744FC4B8-B7CD-4BE9-B0BB-212EC4F8A583}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

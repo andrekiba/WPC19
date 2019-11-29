@@ -7,7 +7,6 @@ using Refit;
 
 namespace Api
 {
-	//[Headers("Authorization: Bearer")]
 	public interface IProjectApi
 	{
 		[Get("/api/projects")]
