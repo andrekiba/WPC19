@@ -5,7 +5,7 @@ using Api.Requests;
 using Api.Responses;
 using Microsoft.AspNetCore.Mvc;
 
-namespace PollyRetry.Controllers
+namespace WithoutPolly.Controllers
 {
 	[ApiController]
 	[Route("api/azuredevops")]
@@ -23,14 +23,13 @@ namespace PollyRetry.Controllers
 			await Task.Delay(100); 
 			requestCount++;
 
-			if (requestCount % 3 == 0)
-				return Ok(new Project
+			return requestCount % 3 == 0 ? 
+				Ok(new Project
 				{
 					Id = id,
 					Name = "WPC2019"
-				});
-			
-			return StatusCode((int) HttpStatusCode.InternalServerError, "Something went wrong");
+				}): 
+				StatusCode((int)HttpStatusCode.InternalServerError, "Something went wrong");
 		}
 
 		[HttpPost("projects")]

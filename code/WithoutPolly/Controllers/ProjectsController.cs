@@ -1,25 +1,30 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Api;
 using Api.Requests;
 using Microsoft.AspNetCore.Mvc;
 
-namespace PollyRetry.Controllers
+namespace WithoutPolly.Controllers
 {
 	[ApiController]
 	[Route("api/projects")]
 	public class ProjectsController : ControllerBase
 	{
+		readonly IHttpClientFactory httpClientFactory;
 		readonly IAzureDevOpsApi azureDevOpsApi;
 
-		public ProjectsController(IAzureDevOpsApi azureDevOpsApi)
+		public ProjectsController(IHttpClientFactory httpClientFactory, IAzureDevOpsApi azureDevOpsApi)
 		{
+			this.httpClientFactory = httpClientFactory;
 			this.azureDevOpsApi = azureDevOpsApi;
 		}
 
 		[HttpGet("{id}")]
 		public async Task<IActionResult> Get(Guid id)
 		{
+			var httpClient = httpClientFactory.CreateClient("AzureDevOps");
+			
 			var response = await azureDevOpsApi.GetProject(id);
 
 			return !response.IsSuccessStatusCode ?
@@ -36,5 +41,6 @@ namespace PollyRetry.Controllers
 				StatusCode((int)response.StatusCode, response.Error) : 
 				Ok(response.Content);
 		}
+
 	}
 }

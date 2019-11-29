@@ -1,15 +1,13 @@
 using System;
-using System.Net.Http;
 using Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Polly;
 using Refit;
 
-namespace PollyRetry
+namespace WithoutPolly
 {
 	public class Startup
 	{
@@ -23,26 +21,27 @@ namespace PollyRetry
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode).RetryAsync(2);
-			
-			AsyncPolicy<HttpResponseMessage> waitAndRetryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-				.WaitAndRetryAsync(2, 
-					retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
-					onRetry: (result, timeSpan) =>
-					{
-						
-					});
-
 			services.AddControllers();
 
+			//services.AddHttpClient("AzureDevOps", client =>
+			//{
+			//	client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+			//	client.DefaultRequestHeaders.Add("Accept", "application/json");
+			//});
+
+			//services.AddRefitClient<IAzureDevOpsApi>()
+			//.ConfigureHttpClient(client =>
+			//{
+			//	client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+			//	client.DefaultRequestHeaders.Add("Accept", "application/json");
+			//});
+
 			services.AddHttpClient("AzureDevOps", client =>
-				{
-					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
-					client.DefaultRequestHeaders.Add("Accept", "application/json");
-				})
-				.AddTypedClient(RestService.For<IAzureDevOpsApi>)
-				.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
-				//.AddPolicyHandler(retryPolicy);
+			{
+				client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+				client.DefaultRequestHeaders.Add("Accept", "application/json");
+			})
+			.AddTypedClient(RestService.For<IAzureDevOpsApi>);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyRetry", "PollyRetry\PollyRetry.csproj", "{734AF08C-7F03-43E1-9B1A-C39C2A7B020B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{2182A847-2F96-4BCC-97B0-E25F46B4208E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Api", "Api\Api.csproj", "{2182A847-2F96-4BCC-97B0-E25F46B4208E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WithoutPolly", "WithoutPolly\WithoutPolly.csproj", "{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{2182A847-2F96-4BCC-97B0-E25F46B4208E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2182A847-2F96-4BCC-97B0-E25F46B4208E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2182A847-2F96-4BCC-97B0-E25F46B4208E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2C8DD24-8515-4228-9578-D0EA4ADE5F00}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

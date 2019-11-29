@@ -13,8 +13,5 @@ namespace Api
 
 		[Post("/azuredevops/projects")]
 		Task<ApiResponse<Project>> CreateProject([Body] CreateProject createProject);
-
-		[Delete("/azuredevops/projects/{id}")]
-		Task<ApiResponse<bool>> DeleteProject(Guid id);
 	}
 }
