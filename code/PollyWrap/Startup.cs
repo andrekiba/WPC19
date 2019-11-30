@@ -14,7 +14,7 @@ using Polly;
 using Polly.Timeout;
 using Refit;
 
-namespace PollyTimeout
+namespace PollyWrap
 {
 	public class Startup
 	{
@@ -42,27 +42,25 @@ namespace PollyTimeout
 					//
 				});
 
-			var defaultProject = new Project
-			{
-				Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
-				Name = "Default Project"
-			};
-
 			IAsyncPolicy<HttpResponseMessage> fallbackPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.Or<TimeoutRejectedException>()
 				.FallbackAsync(
-					fallbackAction: ct => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+					new HttpResponseMessage(HttpStatusCode.OK)
 					{
-						Content = new StringContent(JsonConvert.SerializeObject(defaultProject))
-					}),
+						Content = new StringContent(JsonConvert.SerializeObject(new Project
+						{
+							Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
+							Name = "Default Project"
+						}))
+					},
 					onFallbackAsync: delegateResult =>
 					{
-						if (delegateResult.Exception != null)
+						if (delegateResult?.Exception != null)
 						{
 							//
 						}
-						else if (delegateResult.Result != null)
+						else if (delegateResult?.Result != null)
 						{
 							//
 						}

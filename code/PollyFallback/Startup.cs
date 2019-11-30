@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Api;
 using Api.Responses;
@@ -31,24 +33,30 @@ namespace PollyFallback
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.RetryAsync(2);
 
+			var defaultProject = new Project
+			{
+				Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
+				Name = "Default Project"
+			};
+
 			IAsyncPolicy<HttpResponseMessage> fallbackPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.FallbackAsync(
-					new HttpResponseMessage(HttpStatusCode.OK)
+					//fallbackValue: new HttpResponseMessage(HttpStatusCode.OK)
+					//{
+					//	Content = new StringContent(JsonConvert.SerializeObject(defaultProject))
+					//},
+					fallbackAction: ct => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
 					{
-						Content = new StringContent(JsonConvert.SerializeObject(new Project
-						{
-							Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
-							Name = "Default Project"
-						}))
-					},
+						Content = new StringContent(JsonConvert.SerializeObject(defaultProject))
+					}),
 					onFallbackAsync: delegateResult =>
 					{
-						if (delegateResult?.Exception != null)
+						if (delegateResult.Exception != null)
 						{
 							//
 						}
-						else if (delegateResult?.Result != null)
+						else if (delegateResult.Result != null)
 						{
 							//
 						}
@@ -58,7 +66,10 @@ namespace PollyFallback
 
 			services.AddControllers();
 
-			services.AddRefitClient<IAzureDevOpsApi>()
+			services.AddRefitClient<IAzureDevOpsApi>(/* RefitSettings
+				{
+					ContentSerializer = new TestJsonContentSerializer()
+				}*/)
 				.ConfigureHttpClient((serviceProvider, client) =>
 				{
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
@@ -85,6 +96,44 @@ namespace PollyFallback
 			{
 				endpoints.MapControllers();
 			});
+		}
+	}
+
+	public class TestJsonContentSerializer : IContentSerializer
+	{
+		readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
+
+		public TestJsonContentSerializer() : this(null) { }
+
+		public TestJsonContentSerializer(JsonSerializerSettings jsonSerializerSettings)
+		{
+			this.jsonSerializerSettings = new Lazy<JsonSerializerSettings>(() =>
+			{
+				if (jsonSerializerSettings == null)
+				{
+					return JsonConvert.DefaultSettings == null ? 
+						new JsonSerializerSettings() : 
+						JsonConvert.DefaultSettings();
+				}
+				return jsonSerializerSettings;
+			});
+		}
+
+		public Task<HttpContent> SerializeAsync<T>(T item)
+		{
+			var content = new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
+			return Task.FromResult((HttpContent)content);
+		}
+
+		public async Task<T> DeserializeAsync<T>(HttpContent content)
+		{
+			var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
+
+			await using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+			stream.Seek(0, SeekOrigin.Begin);
+			using var reader = new StreamReader(stream);
+			using var jsonTextReader = new JsonTextReader(reader);
+			return serializer.Deserialize<T>(jsonTextReader);
 		}
 	}
 }

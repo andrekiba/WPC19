@@ -4,7 +4,7 @@ using Api;
 using Api.Requests;
 using Microsoft.AspNetCore.Mvc;
 
-namespace PollyFallback.Controllers
+namespace PollyWrap.Controllers
 {
 	[ApiController]
 	[Route("api/projects")]
@@ -20,11 +20,18 @@ namespace PollyFallback.Controllers
 		[HttpGet("{id}")]
 		public async Task<IActionResult> Get(Guid id)
 		{
-			var response = await azureDevOpsApi.GetProject(id);
-			
-			return !response.IsSuccessStatusCode ?
-				StatusCode((int)response.StatusCode, response.Error.Content) :
-				Ok(response.Content);
+			try
+			{
+				var response = await azureDevOpsApi.GetProject(id);
+				return !response.IsSuccessStatusCode ?
+					StatusCode((int)response.StatusCode, response.Error.Content) :
+					Ok(response.Content);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				throw;
+			}
 		}
 
 		[HttpPost]
