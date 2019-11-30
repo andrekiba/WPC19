@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,7 +30,7 @@ namespace PollyReauth.Controllers
 			if (tokens is null)
 				expiredTokens.TryAdd(id.ToString(), new ConcurrentBag<string> {authToken});
 			else
-				expiredTokens[id.ToString()].Add(authToken);
+				tokens.Add(authToken);
 
 			await Task.Delay(100);
 
