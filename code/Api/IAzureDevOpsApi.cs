@@ -8,9 +8,8 @@ namespace Api
 {
 	public interface IAzureDevOpsApi
 	{
-		[Headers("Authorization: Bearer")]
 		[Get("/azuredevops/projects/{id}")]
-		Task<ApiResponse<Project>> GetProject(Guid id, [Header("Authorization")] string authToken);
+		Task<ApiResponse<Project>> GetProject(Guid id);
 
 		[Post("/azuredevops/projects")]
 		Task<ApiResponse<Project>> CreateProject([Body] CreateProject createProject);

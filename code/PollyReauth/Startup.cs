@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Polly;
+using PollyReauth.Auth;
 using Refit;
 
 namespace PollyReauth
@@ -27,42 +28,65 @@ namespace PollyReauth
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			IAsyncPolicy<HttpResponseMessage> reauthPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-				.RetryAsync(2, onRetry: async (response, retryCount, context) =>
+			IAsyncPolicy<HttpResponseMessage> reauthPolicy = Policy.HandleResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.Unauthorized)
+				.RetryAsync(2, onRetry: (response, retryCount, context) =>
 				{
-					if (response.Result.StatusCode == HttpStatusCode.Unauthorized)
-					{
-						//Perform re-auth
-						if (context.ContainsKey("refreshToken"))
-						{
-							var newAccessToken = await RefreshAccessToken(context["refreshToken"].ToString());
-							if (newAccessToken != null)
-							{
-								//await tokenRefreshed(newAccessToken);
-
-								context["accessToken"] = newAccessToken;
-							}
-						}
-					}
+					//Perform re-auth
+					//if (context.ContainsKey("refreshToken"))
+					//{
+					//	var newAccessToken = await RefreshAccessToken(context["refreshToken"].ToString());
+					//	if (newAccessToken != null)
+					//		context["accessToken"] = newAccessToken;
+						
+					//}
 				});
 
 			services.AddControllers();
 
-			services.AddHttpClient("AzureDevOps", client =>
+			services.AddMemoryCache();
+			services.AddSingleton<ITokenProvider, TokenProvider>();
+
+			var accessToken = Guid.NewGuid();
+
+			//services
+			//	.AddHttpClient("AzureDevOps", (serviceProvider, client) =>
+			//	{
+			//		client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+			//		client.DefaultRequestHeaders.Add("Accept", "application/json");
+			//		client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+			//	})
+			//	.AddTypedClient((client, serviceProvider) => RestService.For<IAzureDevOpsApi>(client, new RefitSettings
+			//	{
+			//		//AuthorizationHeaderValueGetter = serviceProvider.GetService<ITokenProvider>().GetToken
+			//	}))
+			//	.AddPolicyHandler(reauthPolicy);
+			//	//.AddHttpMessageHandler(serviceProvider =>
+			//	//{
+			//	//	var tokenProvider = serviceProvider.GetService<ITokenProvider>();
+			//	//	return new AuthMessageHandler(tokenProvider.GetToken);
+			//	//});
+
+			services
+				.AddRefitClient<IAzureDevOpsApi>()
+				.ConfigureHttpClient((serviceProvider, client) =>
 				{
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
+					client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 				})
-				.AddTypedClient(RestService.For<IAzureDevOpsApi>)
-				//.AddHttpMessageHandler<AuthHttpClientHandler>()
-				.AddPolicyHandler(reauthPolicy);
-		}
-
-		static async Task<string> RefreshAccessToken(string refreshToken)
-		{
-			//call the service to refresh the token
-			await Task.Delay(100);
-			return "UpdatedToken" + refreshToken;
+				.AddPolicyHandler((serviceProvider, request) => Policy
+					.HandleResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.Unauthorized)
+					.WaitAndRetryAsync(1,
+						retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+						onRetry: async (response, retryCount, context) =>
+						{
+							//Attenzione che onRetry non è thread safe!!
+							var newToken = await serviceProvider.GetService<ITokenProvider>().GetToken();
+							if(request.Headers.Authorization != null)
+								request.Headers.Authorization = new AuthenticationHeaderValue(request.Headers.Authorization.Scheme, newToken);
+							else
+								request.Headers.Add("Authorization", $"Bearer {newToken}");
+						}));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -84,11 +108,11 @@ namespace PollyReauth
 		}
 	}
 
-	public class AuthHttpClientHandler : DelegatingHandler
+	public class AuthMessageHandler : DelegatingHandler
 	{
 		readonly Func<Task<string>> getToken;
 
-		public AuthHttpClientHandler(Func<Task<string>> getToken)
+		public AuthMessageHandler(Func<Task<string>> getToken)
 		{
 			var func = getToken;
 			this.getToken = func ?? throw new ArgumentNullException(nameof(getToken));

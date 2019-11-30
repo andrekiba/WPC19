@@ -20,7 +20,7 @@ namespace PollyReauth.Controllers
 		[HttpGet("{id}")]
 		public async Task<IActionResult> Get(Guid id)
 		{
-			var response = await azureDevOpsApi.GetProject(id, "authToken");
+			var response = await azureDevOpsApi.GetProject(id);
 
 			return !response.IsSuccessStatusCode ?
 				StatusCode((int)response.StatusCode, response.Error.Content) :
