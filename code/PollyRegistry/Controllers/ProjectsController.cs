@@ -4,7 +4,7 @@ using Api;
 using Api.Requests;
 using Microsoft.AspNetCore.Mvc;
 
-namespace PollyWrap.Controllers
+namespace PollyRegistry.Controllers
 {
 	[ApiController]
 	[Route("api/projects")]
@@ -21,7 +21,7 @@ namespace PollyWrap.Controllers
 		public async Task<IActionResult> Get(Guid id)
 		{
 			var response = await azureDevOpsApi.GetProject(id);
-			
+
 			return !response.IsSuccessStatusCode ?
 				StatusCode((int)response.StatusCode, response.Error.Content) :
 				Ok(response.Content);

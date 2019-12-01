@@ -8,9 +8,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Polly;
+using Polly.Registry;
 using Refit;
 
-namespace PollyRetry
+namespace PollyRegistry
 {
 	public class Startup
 	{
@@ -38,7 +39,7 @@ namespace PollyRetry
 					}
 				});
 			
-			AsyncPolicy<HttpResponseMessage> waitAndRetryPolicy = Policy
+			IAsyncPolicy<HttpResponseMessage> waitAndRetryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.WaitAndRetryAsync(2, 
 					retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
@@ -54,6 +55,16 @@ namespace PollyRetry
 						}
 					});
 
+			IAsyncPolicy<HttpResponseMessage> noOpPolicy = Policy.NoOpAsync<HttpResponseMessage>();
+
+			var registry = new PolicyRegistry
+			{
+				{ "defaultRetry", retryPolicy },
+				{ "defaultWaitAndRetry", waitAndRetryPolicy },
+				{ "noOp", noOpPolicy}
+			};
+			services.AddPolicyRegistry(registry);
+
 			services.AddControllers();
 
 			services.AddRefitClient<IAzureDevOpsApi>()
@@ -62,8 +73,17 @@ namespace PollyRetry
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
 				})
-				//.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
-				.AddPolicyHandler(retryPolicy);
+				.AddPolicyHandlerFromRegistry("defaultRetry")
+				.AddPolicyHandlerFromRegistry((reg, request) =>
+					{
+						if(request.Method == HttpMethod.Get)
+							return reg.Get<IAsyncPolicy<HttpResponseMessage>>("defaultRetry");
+						
+						if(request.RequestUri.LocalPath.StartsWith("matchWhatYouNeed"))
+							return reg.Get<IAsyncPolicy<HttpResponseMessage>>("defaultWaitAndRetry");
+						
+						return reg.Get<IAsyncPolicy<HttpResponseMessage>>("noOp");
+					});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

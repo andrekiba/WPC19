@@ -1,16 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Polly;
+using PollyContext.Extensions;
 using Refit;
 
-namespace PollyRetry
+namespace PollyContext
 {
 	public class Startup
 	{
@@ -26,16 +31,12 @@ namespace PollyRetry
 		{
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-				.RetryAsync(2, onRetry: (response, retryCount) =>
+				.RetryAsync(2, onRetry: (response, retryCount, context) =>
 				{
-					if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
-					{
-						//Do somethig
-					}
-					else
-					{
-						//Log something
-					}
+					var logger = context.GetLogger();
+					logger?.LogError(response.Result.ReasonPhrase);
+					logger?.LogInformation(context.OperationKey);
+					logger?.LogInformation(context[PolicyContextKeys.MyTestKey] as string);
 				});
 			
 			AsyncPolicy<HttpResponseMessage> waitAndRetryPolicy = Policy
@@ -46,23 +47,35 @@ namespace PollyRetry
 					{
 						if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
 						{
-							//Perform re-auth
+							context.GetLogger()?.LogError(response.Result.ReasonPhrase);
 						}
 						else
 						{
-							//Log something
+							//Log something else
 						}
 					});
 
 			services.AddControllers();
 
-			services.AddRefitClient<IAzureDevOpsApi>()
-				.ConfigureHttpClient((serviceProvider, client) =>
+			services
+				//.AddRefitClient<IAzureDevOpsApi>()
+				//.ConfigureHttpClient((serviceProvider, client) =>
+				//{
+				//	client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+				//	client.DefaultRequestHeaders.Add("Accept", "application/json");
+				//})
+				.AddHttpClient("AzureDevOpsWithoutRefit", client =>
 				{
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
 				})
 				//.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
+				//.AddHttpMessageHandler((serviceProvider) =>
+				//{
+				//	var logger = serviceProvider.GetRequiredService<ILogger<Startup>>();
+				//	var context = new Polly.Context("AzureDevOps").WithLogger(logger);
+				//	return new PollyContextMessageHandler(context);
+				//})
 				.AddPolicyHandler(retryPolicy);
 		}
 
@@ -82,6 +95,24 @@ namespace PollyRetry
 			{
 				endpoints.MapControllers();
 			});
+		}
+	}
+
+	public class PollyContextMessageHandler : DelegatingHandler
+	{
+		readonly Polly.Context context;
+
+		public PollyContextMessageHandler(Polly.Context context = null)
+		{
+			this.context = context;
+		}
+
+		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+		{
+			if (context != null)
+				request.SetPolicyExecutionContext(context);
+
+			return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 		}
 	}
 }

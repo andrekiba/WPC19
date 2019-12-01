@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyTimeout", "PollyTimeou
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyWrap", "PollyWrap\PollyWrap.csproj", "{F16E7E04-BC3A-4FB9-AD14-FF12C1B1A0F7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyRegistry", "PollyRegistry\PollyRegistry.csproj", "{04EAEA4F-4C48-477B-ADAF-B757D3DFE12B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyContext", "PollyContext\PollyContext.csproj", "{F4B2EA39-FE49-425A-AC48-BE8F371DE284}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +55,14 @@ Global
 		{F16E7E04-BC3A-4FB9-AD14-FF12C1B1A0F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F16E7E04-BC3A-4FB9-AD14-FF12C1B1A0F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F16E7E04-BC3A-4FB9-AD14-FF12C1B1A0F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04EAEA4F-4C48-477B-ADAF-B757D3DFE12B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04EAEA4F-4C48-477B-ADAF-B757D3DFE12B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04EAEA4F-4C48-477B-ADAF-B757D3DFE12B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04EAEA4F-4C48-477B-ADAF-B757D3DFE12B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4B2EA39-FE49-425A-AC48-BE8F371DE284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4B2EA39-FE49-425A-AC48-BE8F371DE284}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4B2EA39-FE49-425A-AC48-BE8F371DE284}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4B2EA39-FE49-425A-AC48-BE8F371DE284}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

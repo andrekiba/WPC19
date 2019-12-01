@@ -42,18 +42,20 @@ namespace PollyWrap
 					//
 				});
 
+			var defaultProject = new Project
+			{
+				Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
+				Name = "Default Project"
+			};
+
 			IAsyncPolicy<HttpResponseMessage> fallbackPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.Or<TimeoutRejectedException>()
 				.FallbackAsync(
-					new HttpResponseMessage(HttpStatusCode.OK)
+					fallbackAction: ct => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
 					{
-						Content = new StringContent(JsonConvert.SerializeObject(new Project
-						{
-							Id = Guid.Parse("3ec8c89e-7222-4d4e-8d7e-edfdc83c34af"),
-							Name = "Default Project"
-						}))
-					},
+						Content = new StringContent(JsonConvert.SerializeObject(defaultProject))
+					}),
 					onFallbackAsync: delegateResult =>
 					{
 						if (delegateResult?.Exception != null)
@@ -68,6 +70,11 @@ namespace PollyWrap
 					}
 				);
 
+			var wrapPolicy = Policy
+				.WrapAsync(fallbackPolicy, retryPolicy, timeoutPolicy)
+				.WithPolicyKey("WrapPolicy");
+			//var wrapPolicy1 = fallbackPolicy.WrapAsync(retryPolicy.WrapAsync(timeoutPolicy));
+
 			services.AddControllers();
 
 			services.AddRefitClient<IAzureDevOpsApi>()
@@ -76,9 +83,7 @@ namespace PollyWrap
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
 				})
-				.AddPolicyHandler(fallbackPolicy)
-				.AddPolicyHandler(retryPolicy)
-				.AddPolicyHandler(timeoutPolicy);
+				.AddPolicyHandler(wrapPolicy);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
