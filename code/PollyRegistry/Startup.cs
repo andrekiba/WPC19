@@ -2,13 +2,18 @@ using System;
 using System.Net;
 using System.Net.Http;
 using Api;
+using Api.Responses;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Registry;
+using Polly.Retry;
+using PollyCommons;
+using PollyCommons.Extensions;
 using Refit;
 
 namespace PollyRegistry
@@ -25,17 +30,19 @@ namespace PollyRegistry
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			#region Policy
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-				.RetryAsync(2, onRetry: (response, retryCount) =>
+				.RetryAsync(2, onRetry: (response, retryCount, context) =>
 				{
 					if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
 					{
-						//Do somethig
+						//Log something
 					}
 					else
 					{
-						//Log something
+						//Log something else
 					}
 				});
 			
@@ -47,11 +54,27 @@ namespace PollyRegistry
 					{
 						if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
 						{
-							//Perform re-auth
+							//Log something
 						}
 						else
 						{
-							//Log something
+							//Log something else
+						}
+					});
+
+			IAsyncPolicy<ApiResponse<Project>> refitRetryPolicy = Policy
+				.Handle<ApiException>()
+				.OrResult<ApiResponse<Project>>(r => !r.IsSuccessStatusCode)
+				.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+					onRetry: (delegatedResult, timeSpan, context) =>
+					{
+						if (delegatedResult.Result != null)
+						{
+							var apiResponse = delegatedResult.Result;
+						}
+						else if (delegatedResult.Exception != null)
+						{
+							var apiEx = delegatedResult.Exception as ApiException;
 						}
 					});
 
@@ -59,11 +82,14 @@ namespace PollyRegistry
 
 			var registry = new PolicyRegistry
 			{
-				{ "defaultRetry", retryPolicy },
-				{ "defaultWaitAndRetry", waitAndRetryPolicy },
-				{ "noOp", noOpPolicy}
+				{ PolicyNames.DefaultRetry, retryPolicy },
+				{ PolicyNames.DefaultWaitAndRetry, waitAndRetryPolicy },
+				{ PolicyNames.NoOp, noOpPolicy},
+				{ PolicyNames.RefitRetryPolicy, refitRetryPolicy}
 			};
 			services.AddPolicyRegistry(registry);
+
+			#endregion 
 
 			services.AddControllers();
 
@@ -72,18 +98,18 @@ namespace PollyRegistry
 				{
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 					client.DefaultRequestHeaders.Add("Accept", "application/json");
-				})
-				.AddPolicyHandlerFromRegistry("defaultRetry")
-				.AddPolicyHandlerFromRegistry((reg, request) =>
-					{
-						if(request.Method == HttpMethod.Get)
-							return reg.Get<IAsyncPolicy<HttpResponseMessage>>("defaultRetry");
-						
-						if(request.RequestUri.LocalPath.StartsWith("matchWhatYouNeed"))
-							return reg.Get<IAsyncPolicy<HttpResponseMessage>>("defaultWaitAndRetry");
-						
-						return reg.Get<IAsyncPolicy<HttpResponseMessage>>("noOp");
-					});
+				});
+			//.AddPolicyHandlerFromRegistry("defaultRetry")
+			//.AddPolicyHandlerFromRegistry((reg, request) =>
+			//	{
+			//		if(request.Method == HttpMethod.Get)
+			//			return reg.Get<IAsyncPolicy<HttpResponseMessage>>(PolicyNames.DefaultRetry);
+
+			//		if(request.RequestUri.LocalPath.StartsWith("matchWhatYouNeed"))
+			//			return reg.Get<IAsyncPolicy<HttpResponseMessage>>(PolicyNames.DefaultWaitAndRetry);
+
+			//		return reg.Get<IAsyncPolicy<HttpResponseMessage>>(PolicyNames.NoOp);
+			//	});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

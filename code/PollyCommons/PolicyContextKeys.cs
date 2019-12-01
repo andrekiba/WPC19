@@ -1,4 +1,4 @@
-﻿namespace PollyContext
+﻿namespace PollyCommons
 {
 	public static class PolicyContextKeys
 	{

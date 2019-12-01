@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Polly;
 
-namespace PollyContext.Extensions
+namespace PollyCommons.Extensions
 {
 	public static class PollyContextExtensions
 	{
