@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
-using PollyContext.Extensions;
+using PollyCommons;
+using PollyCommons.Extensions;
 
 namespace PollyContext.Controllers
 {
