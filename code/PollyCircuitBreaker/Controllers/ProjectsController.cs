@@ -11,10 +11,12 @@ namespace PollyCircuitBreaker.Controllers
 	public class ProjectsController : ControllerBase
 	{
 		readonly IAzureDevOpsApi azureDevOpsApi;
+		readonly IAlmApi almApi;
 
-		public ProjectsController(IAzureDevOpsApi azureDevOpsApi)
+		public ProjectsController(IAzureDevOpsApi azureDevOpsApi, IAlmApi almApi)
 		{
 			this.azureDevOpsApi = azureDevOpsApi;
+			this.almApi = almApi;
 		}
 
 		[HttpGet("{id}")]
@@ -27,13 +29,13 @@ namespace PollyCircuitBreaker.Controllers
 				Ok(response.Content);
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> Create(CreateProject createProject)
+		[HttpGet("alm/{id}")]
+		public async Task<IActionResult> AlmGet(Guid id)
 		{
-			var response = await azureDevOpsApi.CreateProject(createProject);
-			
-			return !response.IsSuccessStatusCode ? 
-				StatusCode((int)response.StatusCode, response.Error) : 
+			var response = await almApi.GetProject(id);
+
+			return !response.IsSuccessStatusCode ?
+				StatusCode((int)response.StatusCode, response.Error.Content) :
 				Ok(response.Content);
 		}
 	}

@@ -38,6 +38,10 @@ namespace PollyCircuitBreaker
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.CircuitBreakerAsync(2, TimeSpan.FromSeconds(30), OnBreak, OnReset, OnHalfOpen);
 
+			IAsyncPolicy<HttpResponseMessage> advancedBreakerPolicy = Policy
+				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+				.AdvancedCircuitBreakerAsync(.5, TimeSpan.FromSeconds(30), 10, TimeSpan.FromSeconds(30), OnBreak, OnReset, OnHalfOpen);
+
 			services.AddControllers();
 
 			services.AddRefitClient<IAzureDevOpsApi>()
@@ -53,6 +57,15 @@ namespace PollyCircuitBreaker
 				//	.CircuitBreakerAsync(2, TimeSpan.FromSeconds(60), OnBreak, OnReset, OnHalfOpen))
 				
 				//CORRECT --> Circuit Breaker is a stateful policy and can (most of the time must) be shared
+				.AddPolicyHandler(breakerPolicy);
+
+			services.AddRefitClient<IAlmApi>()
+				.ConfigureHttpClient((serviceProvider, client) =>
+				{
+					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+					client.DefaultRequestHeaders.Add("Accept", "application/json");
+				})
+				.AddPolicyHandler(retryPolicy)
 				.AddPolicyHandler(breakerPolicy);
 		}
 
