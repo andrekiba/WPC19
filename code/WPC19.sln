@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyCache", "PollyCache\Po
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyCircuitBreaker", "PollyCircuitBreaker\PollyCircuitBreaker.csproj", "{72A886F6-96A2-423A-91B0-A06EEACCEAE1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PollyBulkhead", "PollyBulkhead\PollyBulkhead.csproj", "{00C24B8C-F4A5-4CA1-8452-6503E169A54B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{72A886F6-96A2-423A-91B0-A06EEACCEAE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72A886F6-96A2-423A-91B0-A06EEACCEAE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72A886F6-96A2-423A-91B0-A06EEACCEAE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00C24B8C-F4A5-4CA1-8452-6503E169A54B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00C24B8C-F4A5-4CA1-8452-6503E169A54B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00C24B8C-F4A5-4CA1-8452-6503E169A54B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00C24B8C-F4A5-4CA1-8452-6503E169A54B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
