@@ -28,12 +28,18 @@ namespace PollyWrap
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			#region Timeout
+
 			IAsyncPolicy<HttpResponseMessage> timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(1, onTimeoutAsync:
 				(context, timeSpan, task) =>
 				{
 					return Task.CompletedTask;
 				});
-			
+
+			#endregion
+
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.Or<TimeoutRejectedException>()
@@ -41,6 +47,10 @@ namespace PollyWrap
 				{
 					//
 				});
+
+			#endregion
+
+			#region Fallback
 
 			var defaultProject = new Project
 			{
@@ -69,6 +79,8 @@ namespace PollyWrap
 						return Task.CompletedTask;
 					}
 				);
+
+			#endregion 
 
 			var wrapPolicy = Policy
 				.WrapAsync(fallbackPolicy, retryPolicy, timeoutPolicy)

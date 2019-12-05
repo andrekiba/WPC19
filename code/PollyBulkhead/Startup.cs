@@ -27,12 +27,9 @@ namespace PollyBulkhead
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			//IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
-			//	.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-			//	.RetryAsync(2, onRetry: (response, retryCount) =>
-			//	{
-			//		Debug.WriteLine($"Retry {retryCount}");
-			//	});
+			services.AddControllers();
+
+			#region Bulkhead
 
 			AsyncBulkheadPolicy<ApiResponse<Project>> bulkheadPolicy = Policy
 				.BulkheadAsync<ApiResponse<Project>>(2, 4, onBulkheadRejectedAsync: context =>
@@ -41,7 +38,7 @@ namespace PollyBulkhead
 					return Task.CompletedTask;
 				});
 
-			services.AddControllers();
+			#endregion
 
 			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>

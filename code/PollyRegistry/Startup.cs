@@ -30,7 +30,7 @@ namespace PollyRegistry
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			#region Policy
+			#region Retry and NoOp
 
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
@@ -80,6 +80,10 @@ namespace PollyRegistry
 
 			IAsyncPolicy<HttpResponseMessage> noOpPolicy = Policy.NoOpAsync<HttpResponseMessage>();
 
+			#endregion
+
+			#region Registry
+
 			var registry = new PolicyRegistry
 			{
 				{ PolicyNames.DefaultRetry, retryPolicy },
@@ -87,9 +91,10 @@ namespace PollyRegistry
 				{ PolicyNames.NoOp, noOpPolicy},
 				{ PolicyNames.RefitRetryPolicy, refitRetryPolicy}
 			};
+			
 			services.AddPolicyRegistry(registry);
 
-			#endregion 
+			#endregion
 
 			services.AddControllers();
 

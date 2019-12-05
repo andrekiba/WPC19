@@ -29,9 +29,17 @@ namespace PollyFallback
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddControllers();
+
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.RetryAsync(2);
+
+			#endregion
+
+			#region Fallback
 
 			var defaultProject = new Project
 			{
@@ -41,6 +49,7 @@ namespace PollyFallback
 
 			IAsyncPolicy<HttpResponseMessage> fallbackPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+				.Or<Exception>()
 				.FallbackAsync(
 					//fallbackValue: new HttpResponseMessage(HttpStatusCode.OK)
 					//{
@@ -64,12 +73,9 @@ namespace PollyFallback
 					}
 				);
 
-			services.AddControllers();
+			#endregion
 
-			services.AddRefitClient<IAzureDevOpsApi>(/* RefitSettings
-				{
-					ContentSerializer = new TestJsonContentSerializer()
-				}*/)
+			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>
 				{
 					client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
@@ -96,44 +102,6 @@ namespace PollyFallback
 			{
 				endpoints.MapControllers();
 			});
-		}
-	}
-
-	public class TestJsonContentSerializer : IContentSerializer
-	{
-		readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
-
-		public TestJsonContentSerializer() : this(null) { }
-
-		public TestJsonContentSerializer(JsonSerializerSettings jsonSerializerSettings)
-		{
-			this.jsonSerializerSettings = new Lazy<JsonSerializerSettings>(() =>
-			{
-				if (jsonSerializerSettings == null)
-				{
-					return JsonConvert.DefaultSettings == null ? 
-						new JsonSerializerSettings() : 
-						JsonConvert.DefaultSettings();
-				}
-				return jsonSerializerSettings;
-			});
-		}
-
-		public Task<HttpContent> SerializeAsync<T>(T item)
-		{
-			var content = new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
-			return Task.FromResult((HttpContent)content);
-		}
-
-		public async Task<T> DeserializeAsync<T>(HttpContent content)
-		{
-			var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
-
-			await using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-			stream.Seek(0, SeekOrigin.Begin);
-			using var reader = new StreamReader(stream);
-			using var jsonTextReader = new JsonTextReader(reader);
-			return serializer.Deserialize<T>(jsonTextReader);
 		}
 	}
 }

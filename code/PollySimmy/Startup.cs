@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -29,15 +30,17 @@ namespace PollySimmy
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddControllers();
+
 			#region Behavior
 
 			AsyncInjectBehaviourPolicy behaviorPolicy = MonkeyPolicy.InjectBehaviourAsync(
 				async () =>
 				{
 					await Task.Delay(100);
-					Console.WriteLine("Do what you want here");
+					Debug.WriteLine("Do what you want here");
 				},
-				0.25, // 25% of the time
+				1, // 25% of the time
 				async () => await Task.FromResult(true));
 
 			services.AddSingleton(behaviorPolicy);
@@ -70,10 +73,12 @@ namespace PollySimmy
 
 			#endregion
 
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.Or<Exception>()
-				.RetryAsync(3, onRetry: (response, retryCount) =>
+				.RetryAsync(2, onRetry: (response, retryCount) =>
 				{
 					if (response.Result?.StatusCode != HttpStatusCode.InternalServerError)
 					{
@@ -85,12 +90,12 @@ namespace PollySimmy
 					}
 				});
 
+			#endregion 
+
 			AsyncPolicyWrap<HttpResponseMessage> faultAndRetry = Policy.WrapAsync(retryPolicy, faultPolicy);
 
 			IAsyncPolicy<HttpResponseMessage> latencyTimeoutAndRetry = Policy.WrapAsync(
 				retryPolicy, timeoutPolicy, latencyPolicy);
-
-			services.AddControllers();
 
 			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>

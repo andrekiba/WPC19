@@ -13,16 +13,13 @@ namespace WithoutPolly.Controllers
 	{
 		static int requestCount;
 
-		public AzureDevOpsController()
-		{
-		}
-
 		[HttpGet("projects/{id}")]
 		public async Task<IActionResult> GetProject(Guid id)
 		{
-			await Task.Delay(100); 
 			requestCount++;
 
+			await Task.Delay(100); 
+			
 			return requestCount % 3 == 0 ? 
 				Ok(new Project
 				{

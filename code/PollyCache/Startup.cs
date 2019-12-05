@@ -27,12 +27,12 @@ namespace PollyCache
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			#region Policy
+			#region Cache provider and registry
 
 			services.AddMemoryCache();
 			services.AddSingleton<IAsyncCacheProvider, MemoryCacheProvider>();
 
-			var registry = services.AddPolicyRegistry();
+			services.AddPolicyRegistry();
 
 			#endregion
 
@@ -49,6 +49,8 @@ namespace PollyCache
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
 			IAsyncCacheProvider cacheProvider, IPolicyRegistry<string> registry)
 		{
+			#region Cache
+
 			static Ttl CacheOnly200OkFilter(Context context, HttpResponseMessage result) => 
 				new Ttl(timeSpan: result.StatusCode == HttpStatusCode.OK ? TimeSpan.FromMinutes(1) : TimeSpan.Zero, 
 					slidingExpiration: true);
@@ -104,6 +106,8 @@ namespace PollyCache
 
 			registry.Add(PolicyNames.CachePolicy, cachePolicy);
 			registry.Add(PolicyNames.CacheOnlyOkPolicy, cacheOnlyOkPolicy);
+
+			#endregion 
 
 			if (env.IsDevelopment())
 			{

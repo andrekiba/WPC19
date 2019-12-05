@@ -29,19 +29,20 @@ namespace WithoutPolly
 			//	client.DefaultRequestHeaders.Add("Accept", "application/json");
 			//});
 
-			//services.AddRefitClient<IAzureDevOpsApi>()
-			//.ConfigureHttpClient(client =>
-			//{
-			//	client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
-			//	client.DefaultRequestHeaders.Add("Accept", "application/json");
-			//});
+			//services.AddHttpClient("AzureDevOps", client =>
+			//	{
+			//		client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
+			//		client.DefaultRequestHeaders.Add("Accept", "application/json");
+			//	})
+			//	.AddTypedClient(RestService.For<IAzureDevOpsApi>);
 
-			services.AddHttpClient("AzureDevOps", client =>
+			services.AddRefitClient<IAzureDevOpsApi>()
+			//services.AddRefitClient<IAzureDevOpsApi>(new RefitSettings())
+			.ConfigureHttpClient(client =>
 			{
 				client.BaseAddress = new Uri(Configuration["AppSettings:AzureDevOpsApiAddress"]);
 				client.DefaultRequestHeaders.Add("Accept", "application/json");
-			})
-			.AddTypedClient(RestService.For<IAzureDevOpsApi>);
+			});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

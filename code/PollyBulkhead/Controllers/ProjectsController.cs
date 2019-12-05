@@ -15,12 +15,12 @@ namespace PollyBulkhead.Controllers
 	{
 		static int requestCount;
 		readonly IAzureDevOpsApi azureDevOpsApi;
-		readonly AsyncBulkheadPolicy<ApiResponse<Project>> bulkePolicy;
+		readonly AsyncBulkheadPolicy<ApiResponse<Project>> bulkHeadPolicy;
 
-		public ProjectsController(IAzureDevOpsApi azureDevOpsApi, AsyncBulkheadPolicy<ApiResponse<Project>> bulkePolicy)
+		public ProjectsController(IAzureDevOpsApi azureDevOpsApi, AsyncBulkheadPolicy<ApiResponse<Project>> bulkHeadPolicy)
 		{
 			this.azureDevOpsApi = azureDevOpsApi;
-			this.bulkePolicy = bulkePolicy;
+			this.bulkHeadPolicy = bulkHeadPolicy;
 		}
 
 		[HttpGet("{id}")]
@@ -28,10 +28,10 @@ namespace PollyBulkhead.Controllers
 		{
 			requestCount++;
 			Debug.WriteLine($"Request count: {requestCount}");
-			Debug.WriteLine($"Bulkhead available count: {bulkePolicy.BulkheadAvailableCount}");
-			Debug.WriteLine($"Queue available count: {bulkePolicy.QueueAvailableCount}");
+			Debug.WriteLine($"Bulkhead available count: {bulkHeadPolicy.BulkheadAvailableCount}");
+			Debug.WriteLine($"Queue available count: {bulkHeadPolicy.QueueAvailableCount}");
 
-			var response = await bulkePolicy.ExecuteAsync(() => azureDevOpsApi.GetProject(id)) ;
+			var response = await bulkHeadPolicy.ExecuteAsync(() => azureDevOpsApi.GetProject(id)) ;
 
 			return !response.IsSuccessStatusCode ?
 				StatusCode((int)response.StatusCode, response.Error.Content) :

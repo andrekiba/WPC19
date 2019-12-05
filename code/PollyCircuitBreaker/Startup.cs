@@ -27,12 +27,20 @@ namespace PollyCircuitBreaker
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddControllers();
+
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.RetryAsync(2, onRetry: (response, retryCount) =>
 				{
 					Debug.WriteLine($"Retry {retryCount}");
 				});
+
+			#endregion
+
+			#region Breaker
 
 			IAsyncPolicy<HttpResponseMessage> breakerPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
@@ -42,7 +50,7 @@ namespace PollyCircuitBreaker
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.AdvancedCircuitBreakerAsync(.5, TimeSpan.FromSeconds(30), 10, TimeSpan.FromSeconds(30), OnBreak, OnReset, OnHalfOpen);
 
-			services.AddControllers();
+			#endregion 
 
 			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>

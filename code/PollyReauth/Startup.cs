@@ -28,25 +28,17 @@ namespace PollyReauth
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			IAsyncPolicy<HttpResponseMessage> reauthPolicy = Policy.HandleResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.Unauthorized)
-				.RetryAsync(2, onRetry: (response, retryCount, context) =>
-				{
-					//Perform re-auth
-					//if (context.ContainsKey("refreshToken"))
-					//{
-					//	var newAccessToken = await RefreshAccessToken(context["refreshToken"].ToString());
-					//	if (newAccessToken != null)
-					//		context["accessToken"] = newAccessToken;
-						
-					//}
-				});
-
 			services.AddControllers();
 
+			var accessToken = Guid.NewGuid();
 			services.AddMemoryCache();
 			services.AddSingleton<ITokenProvider, TokenProvider>();
 
-			var accessToken = Guid.NewGuid();
+			IAsyncPolicy<HttpResponseMessage> reauthPolicy = Policy.HandleResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.Unauthorized)
+				.RetryAsync(2, onRetry: (response, retryCount, context) =>
+				{
+					//Perform reauthorization
+				});
 
 			//services
 			//	.AddHttpClient("AzureDevOps", (serviceProvider, client) =>
@@ -60,10 +52,11 @@ namespace PollyReauth
 			//		//AuthorizationHeaderValueGetter = serviceProvider.GetService<ITokenProvider>().GetToken
 			//	}))
 			//	.AddPolicyHandler(reauthPolicy);
+			
 			//	//.AddHttpMessageHandler(serviceProvider =>
 			//	//{
-			//	//	var tokenProvider = serviceProvider.GetService<ITokenProvider>();
-			//	//	return new AuthMessageHandler(tokenProvider.GetToken);
+			//	//var tokenProvider = serviceProvider.GetService<ITokenProvider>();
+			//	//return new AuthMessageHandler(tokenProvider.GetToken);
 			//	//});
 
 			services

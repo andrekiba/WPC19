@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -24,13 +26,19 @@ namespace PollyRetry
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddControllers();
+
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.RetryAsync(2, onRetry: (response, retryCount) =>
 				{
+					Debug.WriteLine($"Retry {retryCount}");
+
 					if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
 					{
-						//Do somethig
+						//Do something
 					}
 					else
 					{
@@ -42,19 +50,23 @@ namespace PollyRetry
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.WaitAndRetryAsync(2, 
 					retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
-					onRetry: (response, timeSpan, context) =>
+					onRetryAsync: (response, timeSpan, retryCount, context) =>
 					{
+						Debug.WriteLine($"Retry {retryCount}");
+
 						if (response.Result.StatusCode != HttpStatusCode.InternalServerError)
 						{
-							//Perform re-auth
+							//Do something
 						}
 						else
 						{
 							//Log something
 						}
+
+						return Task.CompletedTask;
 					});
 
-			services.AddControllers();
+			#endregion
 
 			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>

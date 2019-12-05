@@ -28,12 +28,20 @@ namespace PollyTimeout
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddControllers();
+
+			#region Timeout
+
 			IAsyncPolicy<HttpResponseMessage> timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(1, onTimeoutAsync:
 				(context, timeSpan, task) =>
 				{
 					return Task.CompletedTask;
 				});
-			
+
+			#endregion
+
+			#region Retry
+
 			IAsyncPolicy<HttpResponseMessage> retryPolicy = Policy
 				.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
 				.Or<TimeoutRejectedException>()
@@ -41,6 +49,10 @@ namespace PollyTimeout
 				{
 					//
 				});
+
+			#endregion
+
+			#region Fallback
 
 			var defaultProject = new Project
 			{
@@ -70,7 +82,7 @@ namespace PollyTimeout
 					}
 				);
 
-			services.AddControllers();
+			#endregion
 
 			services.AddRefitClient<IAzureDevOpsApi>()
 				.ConfigureHttpClient((serviceProvider, client) =>
